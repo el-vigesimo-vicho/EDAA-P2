@@ -54,18 +54,37 @@ int searchSubstring(const string &text, const string &pattern, const vector<int>
     return -1; // El patrón no se encuentra en el texto.
 }
 
+int count(const string &text, const string &pattern, const vector<int> &suffixArray) {
+    int n = text.length();
+    int m = pattern.length();
+    int firstOccurrence = searchSubstring(text, pattern, suffixArray);
+
+    if (firstOccurrence == -1) {
+        return 0; // El patrón no se encuentra en el texto.
+    }
+
+    // Buscar la última ocurrencia del patrón.
+    int lastOccurrence = searchSubstring(text, pattern, suffixArray);
+
+    // Contar las ocurrencias entre la primera y la última ocurrencia.
+    int count = 0;
+    for (int i = firstOccurrence; i <= lastOccurrence; i++) {
+        if (text.compare(suffixArray[i], m, pattern) == 0) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
 int main() {
     string text = "banana";
     vector<int> suffixArray = buildSuffixArray(text);
 
-    string pattern = "nan";
-    int result = searchSubstring(text, pattern, suffixArray);
+    string pattern = "a";
+    int occurrences = count(text, pattern, suffixArray);
 
-    if (result != -1) {
-        cout << "El patrón '" << pattern << "' se encuentra en la posición " << result << " del texto." << endl;
-    } else {
-        cout << "El patrón '" << pattern << "' no se encuentra en el texto." << endl;
-    }
+    cout << "El patrón '" << pattern << "' se encuentra " << occurrences << " veces en el texto." << endl;
 
     return 0;
 }
