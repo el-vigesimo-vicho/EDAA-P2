@@ -1,71 +1,106 @@
+#include <sdsl/suffix_arrays.hpp>
+#include <string>
 #include <iostream>
-#include <vector>
 #include <algorithm>
+#include <iomanip>
 
+using namespace sdsl;
 using namespace std;
 
-struct Suffix {
-    string suff;
-    int index;
-};
+class FMIndexSearch {
+private:
+    string index_suffix = ".fm9";
+    csa_wt<wt_huff<rrr_vector<127> >, 512, 1024> fm_index;
+    size_t max_locations;
+    size_t post_context;
+    size_t pre_context;
 
-bool compareSuffixes(const Suffix &a, const Suffix &b) {
-    return a.suff < b.suff;
-}
+public:
+    FMIndexSearch(size_t max_loc=5, size_t post_ctx=10, size_t pre_ctx=10)
+        : max_locations(max_loc), post_context(post_ctx), pre_context(pre_ctx) {}
 
-vector<int> buildSuffixArray(const string &text) {
-    int n = text.length();
-    vector<Suffix> suffixes(n);
+    bool constructIndex(const string& file) {
+        string index_file = file + index_suffix;
+        if (load_from_file(fm_index, index_file)) {
+            return true;
+        }
 
-    for (int i = 0; i < n; i++) {
-        suffixes[i].suff = text.substr(i);
-        suffixes[i].index = i;
+        ifstream in(file);
+        if (!in) {
+            cout << "ERROR: File " << file << " does not exist. Exit." << endl;
+            return false;
+        }
+
+        cout << "No index " << index_file << " located. Building index now." << endl;
+        construct(fm_index, file.c_str(), 1); // generate index
+        store_to_file(fm_index, index_file);  // save it
+        return true;
     }
 
-    sort(suffixes.begin(), suffixes.end(), compareSuffixes);
-
-    vector<int> suffixArray(n);
-    for (int i = 0; i < n; i++) {
-        suffixArray[i] = suffixes[i].index;
+    void search() {
+        cout << "Index construction complete, index requires " << size_in_mega_bytes(fm_index) << " MiB." << endl;
+        cout << "Input search terms and press Ctrl-D to exit." << endl;
+        string prompt = "\e[0;32m>\e[0m ";
+        cout << prompt;
+        string query;
+        while (getline(cin, query)) {
+            displayOccurrences(query);
+            cout << prompt;
+        }
+        cout << endl;
     }
 
-    return suffixArray;
-}
-
-int searchSubstring(const string &text, const string &pattern, const vector<int> &suffixArray) {
-    int n = text.length();
-    int m = pattern.length();
-    int left = 0;
-    int right = n - 1;
-
-    while (left <= right) {
-        int mid = left + (right - left) / 2;
-        int compareResult = pattern.compare(0, m, text, suffixArray[mid], m);
-
-        if (compareResult == 0) {
-            return suffixArray[mid];
-        } else if (compareResult < 0) {
-            right = mid - 1;
-        } else {
-            left = mid + 1;
+    void displayOccurrences(const string& query) {
+        size_t m = query.size();
+        size_t occs = sdsl::count(fm_index, query.begin(), query.end());
+        cout << "# of occurrences: " << occs << endl;
+        if (occs > 0) {
+            cout << "Location and context of first occurrences: " << endl;
+            auto locations = locate(fm_index, query.begin(), query.begin() + m);
+            sort(locations.begin(), locations.end());
+            for (size_t i = 0, pre_extract = pre_context, post_extract = post_context; i < min(occs, max_locations); ++i) {
+                cout << setw(8) << locations[i] << ": ";
+                if (pre_extract > locations[i]) {
+                    pre_extract = locations[i];
+                }
+                if (locations[i] + m + post_extract > fm_index.size()) {
+                    post_extract = fm_index.size() - locations[i] - m;
+                }
+                auto s = extract(fm_index, locations[i] - pre_extract, locations[i] + m + post_extract - 1);
+                string pre = s.substr(0, pre_extract);
+                s = s.substr(pre_extract);
+                if (pre.find_last_of('\n') != string::npos) {
+                    pre = pre.substr(pre.find_last_of('\n') + 1);
+                }
+                cout << pre;
+                cout << "\e[1;31m";
+                cout << s.substr(0, m);
+                cout << "\e[0m";
+                string context = s.substr(m);
+                cout << context.substr(0, context.find_first_of('\n')) << endl;
+            }
         }
     }
+};
 
-    return -1; // El patrón no se encuentra en el texto.
-}
+int main(int argc, char** argv) {
+    if (argc < 2) {
+        cout << "Usage " << argv[0] << " text_file [max_locations] [post_context] [pre_context]" << endl;
+        return 1;
+    }
 
-int main() {
-    string text = "banana";
-    vector<int> suffixArray = buildSuffixArray(text);
+    size_t max_locations = 5;
+    size_t post_context = 10;
+    size_t pre_context = 10;
+    if (argc >= 3) max_locations = atoi(argv[2]);
+    if (argc >= 4) post_context = atoi(argv[3]);
+    if (argc >= 5) pre_context = atoi(argv[4]);
 
-    string pattern = "nan";
-    int result = searchSubstring(text, pattern, suffixArray);
-
-    if (result != -1) {
-        cout << "El patrón '" << pattern << "' se encuentra en la posición " << result << " del texto." << endl;
-    } else {
-        cout << "El patrón '" << pattern << "' no se encuentra en el texto." << endl;
+    FMIndexSearch fmSearch(max_locations, post_context, pre_context);
+    if (fmSearch.constructIndex(argv[1])) {
+        fmSearch.search();
     }
 
     return 0;
 }
+
