@@ -21,16 +21,15 @@ void generarArchivoConRepeticiones(std::string nombreArchivo, int n, std::string
         // Agregar salto de línea aleatorio
         if (std::rand() % 10 == 0) {
             archivo << '\n';
+        } else {
+            char caracterAleatorio = caracteres[std::rand() % longitudCaracteres];
+            archivo << caracterAleatorio;
         }
 
-        char caracterAleatorio = caracteres[std::rand() % longitudCaracteres];
-        archivo << caracterAleatorio;
-
         // Randomizar la posición del patrón
-        if (std::rand() % (n / y) == 0) {
-            int posicionPatron = std::rand() % (n - longitudX);
-            archivo.seekp(posicionPatron);
+        if (i % (n / y) == 0 && (i + longitudX) <= n) {
             archivo << x;
+            i += longitudX - 1;
         }
     }
 
