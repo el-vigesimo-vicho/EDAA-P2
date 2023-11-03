@@ -72,67 +72,67 @@ long long find_in_table(std::map <std::string,long long> &m,std::string clave){
     return -1;
 }
 
-int main(){
-    long long cont_rep_pat=0;
+// Define la función count
+long long count(std::string& ruta_texto,  std::string& ruta_patron) {
+    long long cont_rep_pat = 0;
     std::vector<std::string> patron;
-
-    std::string nombreArchivo = "patron.txt"; 
-    txt_to_vector_string(patron,nombreArchivo);
-    
     std::vector<std::string> texto;
-    nombreArchivo = "texto.txt";
-    txt_to_vector_string(texto,nombreArchivo);
 
+    txt_to_vector_string(patron, ruta_patron);
+    txt_to_vector_string(texto, ruta_texto);
 
-    std::map <std::string,long long> m;
-    for(long long i=0;i<patron.size();i++){
-        for(long long j=0;j<patron[i].size();j++){
-            std::map<std::string, long long>::iterator it =m.find(patron[i].substr(j,1));
-            if(it != m.end()){
-                m.erase(patron[i].substr(j,1));
-                m.insert(std::pair<std::string,long long>(patron[i].substr(j,1), ( j ) ));
-            }else{
-                m.insert(std::pair<std::string,long long>(patron[i].substr(j,1), ( j ) ));
+    std::map<std::string, long long> m;
+
+    for (long long i = 0; i < patron.size(); i++) {
+        for (long long j = 0; j < patron[i].size(); j++) {
+            std::map<std::string, long long>::iterator it = m.find(patron[i].substr(j, 1));
+            if (it != m.end()) {
+                m.erase(patron[i].substr(j, 1));
+                m.insert(std::pair<std::string, long long>(patron[i].substr(j, 1), (j)));
+            } else {
+                m.insert(std::pair<std::string, long long>(patron[i].substr(j, 1), (j)));
             }
         }
     }
-    std::map<std::string,long long>::iterator it = m.begin();
-    for (it=m.begin(); it!=m.end(); ++it)std::cout << it->first << " => " << it->second << '\n';
 
-    
-    long long num_ch_patron=num_txt(patron);
-    long long num_ch_texto=num_txt(texto);    
+    long long num_ch_patron = num_txt(patron);
+    long long num_ch_texto = num_txt(texto);
 
-    if(num_ch_texto<num_ch_patron){
-        std::cout<<"El patron es mas extenso que el texto\n";
-        exit(-1);
+    if (num_ch_texto < num_ch_patron) {
+        std::cout << "El patrón es más extenso que el texto" << std::endl;
+        return -1;
     }
 
-    long long others=num_ch_patron-1;
-
-    std::string last_str_pat = patron[patron.size()-1];
-    std::string last_ch_pat = last_str_pat.substr(last_str_pat.size()-1);
-
-    long long jump = last_str_pat.size()-1;
+    long long others = num_ch_patron - 1;
+    std::string last_str_pat = patron[patron.size() - 1];
+    std::string last_ch_pat = last_str_pat.substr(last_str_pat.size() - 1);
+    long long jump = last_str_pat.size() - 1;
     long long iterador_str_texto;
     long long iterador_substr_texto;
-    while(jump<num_ch_texto-(texto.size()-1)){//se resta el text.size -1 debido a que corresponde a los saltos de lineas que no son caracteres pero si pertencen al texto
-        adjust(iterador_str_texto,iterador_substr_texto,jump,texto);
-        long long val_map= find_in_table(m,texto[iterador_str_texto].substr(iterador_substr_texto,1));
-        auto c = texto[iterador_str_texto].substr(iterador_substr_texto,1);
-        if(texto[iterador_str_texto].substr(iterador_substr_texto,1)==last_ch_pat){
-            if(verify(patron,texto,iterador_str_texto,iterador_substr_texto,patron.size()-1)){
-                std::cout<<"patron encontrado\n";
+
+    while (jump < num_ch_texto - (texto.size() - 1)) {
+        adjust(iterador_str_texto, iterador_substr_texto, jump, texto);
+        long long val_map = find_in_table(m, texto[iterador_str_texto].substr(iterador_substr_texto, 1));
+        if (texto[iterador_str_texto].substr(iterador_substr_texto, 1) == last_ch_pat) {
+            if (verify(patron, texto, iterador_str_texto, iterador_substr_texto, patron.size() - 1)) {
                 cont_rep_pat++;
             }
-            jump++;            
+            jump++;
+        } else if (val_map > 0) {
+            jump += others - val_map;
+        } else {
+            jump += num_ch_patron;
         }
-        else if( val_map>0 ){
-            jump+= others- val_map;
-        }else{
-            jump+=num_ch_patron;
-        }  
     }
-    std::cout<<cont_rep_pat<<std::endl;
+
+    return cont_rep_pat;
+}
+
+int main() {
+    std::string ruta_texto = "texto.txt";
+    std::string ruta_patron = "patron.txt";
+    long long resultado = count(ruta_texto, ruta_patron);
+    std::cout<< resultado << std::endl;
+
     return 0;
 }
