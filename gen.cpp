@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
     archivoSalida << nuevoContenido;
     archivoSalida.close();
 
-    cout << "El archivo se ha modificado exitosamente." << endl;
+    //cout << "El archivo se ha modificado exitosamente." << endl;
     
     return 0;
 }
