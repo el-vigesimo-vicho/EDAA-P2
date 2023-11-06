@@ -132,7 +132,7 @@ int main() {
     std::string ruta_texto = "texto.txt";
     std::string ruta_patron = "patron.txt";
     long long resultado = count(ruta_texto, ruta_patron);
-    std::cout<< resultado << std::endl;
+    //std::cout<< resultado << std::endl;
 
     return 0;
 }
