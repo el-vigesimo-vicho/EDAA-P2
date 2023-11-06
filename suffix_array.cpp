@@ -1,16 +1,17 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <fstream>
 
 using namespace std;
 
 struct Suffix {
-    string suff;
     int index;
+    string suffix;
 };
 
 bool compareSuffixes(const Suffix &a, const Suffix &b) {
-    return a.suff < b.suff;
+    return a.suffix < b.suffix;
 }
 
 vector<int> buildSuffixArray(const string &text) {
@@ -18,8 +19,8 @@ vector<int> buildSuffixArray(const string &text) {
     vector<Suffix> suffixes(n);
 
     for (int i = 0; i < n; i++) {
-        suffixes[i].suff = text.substr(i);
         suffixes[i].index = i;
+        suffixes[i].suffix = text.substr(i);
     }
 
     sort(suffixes.begin(), suffixes.end(), compareSuffixes);
@@ -32,59 +33,74 @@ vector<int> buildSuffixArray(const string &text) {
     return suffixArray;
 }
 
-int searchSubstring(const string &text, const string &pattern, const vector<int> &suffixArray) {
+int binarySearch(const string &text, const vector<int> &suffixArray, const string &pattern) {
     int n = text.length();
     int m = pattern.length();
-    int left = 0;
-    int right = n - 1;
-
-    while (left <= right) {
-        int mid = left + (right - left) / 2;
-        int compareResult = pattern.compare(0, m, text, suffixArray[mid], m);
-
-        if (compareResult == 0) {
-            return suffixArray[mid];
-        } else if (compareResult < 0) {
-            right = mid - 1;
-        } else {
-            left = mid + 1;
-        }
-    }
-
-    return -1; // El patrón no se encuentra en el texto.
-}
-
-int count(const string &text, const string &pattern, const vector<int> &suffixArray) {
-    int n = text.length();
-    int m = pattern.length();
-    int firstOccurrence = searchSubstring(text, pattern, suffixArray);
-
-    if (firstOccurrence == -1) {
-        return 0; // El patrón no se encuentra en el texto.
-    }
-
-    // Buscar la última ocurrencia del patrón.
-    int lastOccurrence = searchSubstring(text, pattern, suffixArray);
-
-    // Contar las ocurrencias entre la primera y la última ocurrencia.
+    int low = 0, high = n - 1;
     int count = 0;
-    for (int i = firstOccurrence; i <= lastOccurrence; i++) {
-        if (text.compare(suffixArray[i], m, pattern) == 0) {
+
+    while (low <= high) {
+        int mid = low + (high - low) / 2;
+        auto x=suffixArray[mid];
+        int result = text.compare(suffixArray[mid], m, pattern);
+        if (result == 0) {
             count++;
+            int left = mid - 1, right = mid + 1;
+            while (left >= 0 && text.compare(suffixArray[left], m, pattern) == 0) {
+                count++;
+                left--;
+            }
+            while (right < n && text.compare(suffixArray[right], m, pattern) == 0) {
+                count++;
+                right++;
+            }
+            break;
+        } else if (result < 0) {
+            low = mid + 1;
+        } else {
+            high = mid - 1;
         }
     }
 
     return count;
 }
 
-int main() {
-    string text = "banana";
+int count(const string &text, const string &pattern) {
     vector<int> suffixArray = buildSuffixArray(text);
+    return binarySearch(text, suffixArray, pattern);
+}
 
-    string pattern = "a";
-    int occurrences = count(text, pattern, suffixArray);
+string leerArchivoSinSaltosDeLinea(const string &nombreArchivo) {
+    ifstream archivo(nombreArchivo);
 
-    cout << "El patrón '" << pattern << "' se encuentra " << occurrences << " veces en el texto." << endl;
+    if (!archivo.is_open()) {
+        cerr << "No se pudo abrir el archivo: " << nombreArchivo << endl;
+        return "";
+    }
+
+    string contenido;
+    string linea;
+
+    while (getline(archivo, linea)) {
+        contenido += linea;
+    }
+
+    archivo.close();
+
+    return contenido;
+}
+
+
+int main() {
+    string nombreArchivo = "texto.txt"; // Reemplaza con el nombre de tu archivo
+
+    string texto = leerArchivoSinSaltosDeLinea(nombreArchivo);
+    string nombreArchivo2 = "patron.txt"; // Reemplaza con el nombre de tu archivo
+
+    string patron = leerArchivoSinSaltosDeLinea(nombreArchivo2);
+
+    int repetitions = count(texto, patron);
+    //cout << "El patrón se repite " << repetitions << " veces en el texto." << endl;
 
     return 0;
 }
