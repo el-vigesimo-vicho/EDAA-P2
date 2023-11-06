@@ -27,43 +27,48 @@ public:
 
         ifstream in(file);
         if (!in) {
-            // cout << "ERROR: File " << file << " does not exist. Exit." << endl;
+            cout << "ERROR: File " << file << " does not exist. Exit." << endl;
             return false;
         }
 
-        // cout << "No index " << index_file << " located. Building index now." << endl;
+        cout << "No index " << index_file << " located. Building index now." << endl;
         construct(fm_index, file.c_str(), 1); // generate index
         store_to_file(fm_index, index_file);  // save it
         return true;
     }
 
-    int count(string p) {
-        return displayOccurrences(p);
-    }
+    
 
     void search() {
-        // cout << "Index construction complete, index requires " << size_in_mega_bytes(fm_index) << " MiB." << endl;
-        // cout << "Input search terms and press Ctrl-D to exit." << endl;
-        string prompt = "\e[0;32m>\e[0m ";
-        // cout << prompt;
-        string query;
-        while (getline(cin, query)) {
-            displayOccurrences(query);
-            // cout << prompt;
+        std::string primeraLinea;
+        std::ifstream archivo("patron.txt");
+        if (archivo.is_open()) {
+        std::getline(archivo, primeraLinea);
+        archivo.close();
+        } else {
+        // Manejar el caso en que no se pueda abrir el archivo
+        std::cerr << "No se pudo abrir el archivo: " << std::endl;
         }
-        // cout << endl;
+        //cout << "Index construction complete, index requires " << size_in_mega_bytes(fm_index) << " MiB." << endl;
+        //out << "Input search terms and press Ctrl-D to exit." << endl;
+        //string prompt = "\e[0;32m>\e[0m ";
+        //cout << prompt;
+        string query =primeraLinea;
+        displayOccurrences(query);
+        //cout << endl;
     }
 
-    int displayOccurrences(const string& query) {
+    void displayOccurrences(const string& query) {
         size_t m = query.size();
         size_t occs = sdsl::count(fm_index, query.begin(), query.end());
-        cout << occs << endl;
+        //cout << "# of occurrences: " << occs << endl;
+        /*
         if (occs > 0) {
-            // cout << "Location and context of first occurrences: " << endl;
+            cout << "Location and context of first occurrences: " << endl;
             auto locations = locate(fm_index, query.begin(), query.begin() + m);
             sort(locations.begin(), locations.end());
             for (size_t i = 0, pre_extract = pre_context, post_extract = post_context; i < min(occs, max_locations); ++i) {
-                // cout << setw(8) << locations[i] << ": ";
+                cout << setw(8) << locations[i] << ": ";
                 if (pre_extract > locations[i]) {
                     pre_extract = locations[i];
                 }
@@ -76,15 +81,15 @@ public:
                 if (pre.find_last_of('\n') != string::npos) {
                     pre = pre.substr(pre.find_last_of('\n') + 1);
                 }
-                // cout << pre;
-                // cout << "\e[1;31m";
-                // cout << s.substr(0, m);
-                // cout << "\e[0m";
+                cout << pre;
+                cout << "\e[1;31m";
+                cout << s.substr(0, m);
+                cout << "\e[0m";
                 string context = s.substr(m);
-                // cout << context.substr(0, context.find_first_of('\n')) << endl;
+                cout << context.substr(0, context.find_first_of('\n')) << endl;
             }
         }
-        return occs;
+        */
     }
 };
 
@@ -103,8 +108,7 @@ int main(int argc, char** argv) {
 
     FMIndexSearch fmSearch(max_locations, post_context, pre_context);
     if (fmSearch.constructIndex(argv[1])) {
-        // fmSearch.search();
-        fmSearch.count(argv[2]);
+        fmSearch.search();
     }
 
     return 0;
